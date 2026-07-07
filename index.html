@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Elegant Control Panel</title>
+    <style>
+        /* นำเข้าฟอนต์ Prompt เพื่อความโมเดิร์น */
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap');
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* การ์ดควบคุมสไตล์มินิมอลพรีเมียม */
+        .control-card {
+            background-color: #ffffff;
+            padding: 45px 35px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 8px rgba(0, 0, 0, 0.02);
+            text-align: center;
+            width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        /* หัวข้อ */
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* ช่องกรอก IP Address */
+        .ip-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #4a5568;
+            background-color: #f8fafc;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        /* เอฟเฟกต์ตอนคลิกช่องกรอก */
+        .ip-input:focus {
+            outline: none;
+            border-color: #3182ce;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+
+        /* กลุ่มปุ่มกด */
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        /* ปุ่มกดส่วนกลาง */
+        .btn {
+            flex: 1;
+            padding: 14px 0;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        /* ปุ่มเปิด (ON) สไตล์เกรเดียนต์เขียวหรูๆ */
+        .btn-on {
+            background: linear-gradient(135deg, #38a169 0%, #276749 100%);
+        }
+
+        .btn-on:hover {
+            background: linear-gradient(135deg, #2f855a 0%, #22543d 100%);
+            box-shadow: 0 6px 12px rgba(56, 161, 105, 0.2);
+        }
+
+        /* ปุ่มปิด (OFF) สไตล์เกรเดียนต์แดงดูดี */
+        .btn-off {
+            background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%);
+        }
+
+        .btn-off:hover {
+            background: linear-gradient(135deg, #c53030 0%, #742a2a 100%);
+            box-shadow: 0 6px 12px rgba(229, 62, 62, 0.2);
+        }
+
+        /* ข้อความแสดงสถานะด้านล่าง */
+        .status-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f7fafc;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid #edf2f7;
+        }
+
+        .status-text {
+            font-size: 13px;
+            color: #718096;
+            margin: 0;
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-card">
+        <h2>แผงควบคุม ESP32</h2>
+        
+        <input type="text" id="ipAddress" class="ip-input" placeholder="ใส่ IP ของ ESP32 (เช่น 192.168.1.100)">
+        
+        <div class="button-group">
+            <button class="btn btn-on" onclick="sendControl('on')">เปิด (ON)</button>
+            <button class="btn btn-off" onclick="sendControl('off')">ปิด (OFF)</button>
+        </div>
+        
+        <div class="status-container">
+            <p class="status-text" id="status">สถานะ: รอการสั่งงาน...</p>
+        </div>
+    </div>
+
+    <script>
+        function sendControl(command) {
+            const ip = document.getElementById('ipAddress').value.trim();
+            const statusLabel = document.getElementById('status');
+
+            if (!ip) {
+                alert('กรุณากรอก IP Address ของ ESP32 ก่อนครับ');
+                return;
+            }
+
+            statusLabel.innerText = `สถานะ: กำลังส่งคำสั่ง ${command.toUpperCase()}...`;
+
+            fetch(`http://${ip}/${command}`)
+                .then(response => {
+                    if (response.ok) {
+                        statusLabel.innerText = `สถานะ: สั่งงาน ${command.toUpperCase()} สำเร็จ`;
+                        statusLabel.style.color = command === 'on' ? '#2f855a' : '#c53030';
+                    } else {
+                        statusLabel.innerText = `สถานะ: บอร์ดตอบกลับด้วยข้อผิดพลาด (${response.status})`;
+                        statusLabel.style.color = '#718096';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    statusLabel.innerText = `สถานะ: การเชื่อมต่อล้มเหลว (ตรวจสอบ IP)`;
+                    statusLabel.style.color = '#e53e3e';
+                });
+        }
+    </script>
+
+</body>
+</html>
